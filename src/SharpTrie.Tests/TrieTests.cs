@@ -16,7 +16,7 @@ namespace SharpTrie.Tests
 		}
 
 		[Fact]
-		public void Add_GivenNEmptyString_ThrowsException()
+		public void Add_GivenEmptyString_ThrowsException()
 		{
 			var trie = new Trie();
 			Assert.Throws<ArgumentException>(() => trie.Add(""));
@@ -32,28 +32,30 @@ namespace SharpTrie.Tests
 		[Fact]
 		public void Find_GivenEmptyPrefix_ReturnsAllWords()
 		{
-			var expected = new List<string>() {"trie", "tree"};
+			var expected = new List<string>() {"trie", "tree", "nate"};
 			var trie = new Trie();
-			trie.Add(expected[0]);
-			trie.Add(expected[1]);
+			expected.ForEach(word => trie.Add(word));
 
 			var words = trie.Find("");
 			Assert.Equal(0, words.Except(expected).Count());
 		}
 
-		[Fact]
-		public void Find_GivenMissingPrefix_EmptyList()
+		[Theory]
+		[InlineData("tree")]
+		[InlineData("nate")]
+		[InlineData("jenson")]
+		public void Find_GivenMissingPrefix_EmptyList(string prefix)
 		{
 			var trie = new Trie();
 			trie.Add("foo");
 			trie.Add("bar");
 
-			var words = trie.Find("tree");
+			var words = trie.Find(prefix);
 			Assert.Equal(0, words.Count());
 		}
 
 		[Theory]
-		[InlineData("sea")]
+		[InlineData("s")]
 		[InlineData("search")]
 		[InlineData("searchtr")]
 		public void Find_GivenPresentPrefix_ReturnsMatchingWords(string prefix)
@@ -68,12 +70,15 @@ namespace SharpTrie.Tests
 			Assert.Equal(0, words.Except(expected).Count());
 		}
 
-		[Fact]
-		public void Find_GivenFullWord_ReturnsMatchingWord()
+		[Theory]
+		[InlineData("full")]
+		[InlineData("z")]
+
+		public void Find_GivenFullWord_ReturnsMatchingWord(string expected)
 		{
-			var expected = "full";
 			var trie = new Trie();
 			trie.Add(expected);
+			trie.Add("another");
 			var words = trie.Find(expected);
 
 			Assert.Equal(true, words.Count() == 1);

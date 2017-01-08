@@ -28,7 +28,23 @@ namespace SharpTrie
 			{
 				throw new ArgumentException("Cannot add an empty word to the trie.");
 			}
-			_rootNode.AddSuffix(s);
+
+			var currentNode = _rootNode;
+
+			foreach (char currentChar in s)
+			{
+				Node nextNode = null;
+				if (currentNode.Children.TryGetValue(currentChar, out nextNode))
+				{
+					currentNode = nextNode;
+				}
+				else
+				{
+					currentNode.Children.Add(currentChar, new Node(currentChar));
+					currentNode = currentNode.Children[currentChar];
+				}
+			}
+			currentNode.IsComplete = true;
 		}
 
 		/// <summary>
@@ -47,10 +63,23 @@ namespace SharpTrie
 			// If the prefix is empty, return all of the words in the trie.
 			if (prefix == "")
 			{
-				return _rootNode.Children.Values.SelectMany(n => n.GetSuffixes());
+				return _rootNode.Children.Values.SelectMany(n => PrefixSearch(n, n.Character.ToString()));
 			}
 
 			// Find the node in the trie where the prefix ends.
+			Node prefixNode = FindEndOfPrefix(prefix);
+
+			// Return an empty list if we didn't find this prefix in the trie.
+			return prefixNode == null ? new List<string>() : PrefixSearch(prefixNode, prefix);
+		}
+
+		/// <summary>
+		/// Search for the node in the trie that represents this prefix.
+		/// </summary>
+		/// <param name="prefix">The prefix to search for.</param>
+		/// <returns>The node representing the last character in the given prefix. Null if it cannot be found.</returns>
+		private Node FindEndOfPrefix(string prefix)
+		{
 			Node currentNode = _rootNode;
 			int currentCharIndex = 0;
 			while (currentCharIndex < prefix.Length && currentNode != null)
@@ -60,14 +89,27 @@ namespace SharpTrie
 				currentNode = nextNode;
 				currentCharIndex++;
 			}
+			return currentNode;
+		}
 
-			// Return an empty list if we didn't find this prefix in the trie.
-			if (currentNode == null)
+		/// <summary>
+		/// Search the node's subtree for all complete words.
+		/// </summary>
+		/// <param name="startNode">The node to start the search at.</param>
+		/// <param name="prefix">The prefix from the root to the start node.</param>
+		/// <returns></returns>
+		private static IEnumerable<string> PrefixSearch(Node startNode, string prefix)
+		{
+			var results = new List<string>();
+			if (startNode.IsComplete)
 			{
-				return new List<string>();
+				results.Add(prefix);
 			}
-
-			return currentNode.GetSuffixes(prefix.Substring(0, prefix.Length - 1));
+			foreach (var charAndNode in startNode.Children)
+			{
+				results.AddRange(PrefixSearch(charAndNode.Value, prefix + charAndNode.Key));
+			}
+			return results;
 		}
 	}
 }
