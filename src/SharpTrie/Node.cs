@@ -11,6 +11,7 @@ namespace SharpTrie
 		public Node(char c)
 		{
 			this.Character = c;
+			this.Children = new Dictionary<char, Node>();
 		}
 
 		public void AddSuffix(string suffix)
@@ -32,8 +33,24 @@ namespace SharpTrie
 			else
 			{
 				var newChild = new Node(next);
+				this.Children.Add(next, newChild);
 				newChild.AddSuffix(newSuffix);
 			}
+		}
+
+		public IEnumerable<string> GetSuffixes(string prefix = "")
+		{
+			var result = new List<string>();
+			if (this.IsComplete)
+			{
+				result.Add(prefix + this.Character);
+			}
+			foreach (var kv in this.Children)
+			{
+				Node childNode = kv.Value;
+				result.AddRange(childNode.GetSuffixes(prefix + this.Character));
+			}
+			return result;
 		}
 	}
 }
